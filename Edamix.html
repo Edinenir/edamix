@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Едамикс - Доставка еды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel для компиляции JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // === ИКОНКИ (SVG компоненты) ===
+        const ShoppingBagIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+        );
+
+        const SearchIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+            </svg>
+        );
+
+        const PlusIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14"/>
+                <path d="M12 5v14"/>
+            </svg>
+        );
+
+        const MinusIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14"/>
+            </svg>
+        );
+
+        const XIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
+            </svg>
+        );
+
+        const ChefHatIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
+                <line x1="6" y1="17" x2="18" y2="17"/>
+            </svg>
+        );
+
+        const TruckIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 17h4V5H2v12h3"/>
+                <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5"/>
+                <path d="M14 17h1"/>
+                <circle cx="7.5" cy="17.5" r="2.5"/>
+                <circle cx="17.5" cy="17.5" r="2.5"/>
+            </svg>
+        );
+
+        const DashboardIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="7" height="9" x="3" y="3" rx="1"/>
+                <rect width="7" height="5" x="14" y="3" rx="1"/>
+                <rect width="7" height="9" x="14" y="12" rx="1"/>
+                <rect width="7" height="5" x="3" y="16" rx="1"/>
+            </svg>
+        );
+
+        const CheckIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+            </svg>
+        );
+
+        const MapPinIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+        );
+
+        const PhoneIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+        );
+
+        const ChevronRightIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+            </svg>
+        );
+
+        const UtensilsIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                <path d="M7 2v20"/>
+                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+            </svg>
+        );
+
+        const CoffeeIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 2v2"/>
+                <path d="M14 2v2"/>
+                <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>
+                <path d="M6 2v2"/>
+            </svg>
+        );
+
+        const IceCreamIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="10" r="6"/>
+                <path d="M12 2v2"/>
+                <path d="m4.93 4.93 1.41 1.41"/>
+                <path d="m17.66 4.93-1.41 1.41"/>
+                <path d="M12 16v6"/>
+            </svg>
+        );
+
+        const BoxIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/>
+                <path d="M12 22V12"/>
+            </svg>
+        );
+
+        const FlameIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+        );
+
+        const SandwichIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m11 13-1-9"/>
+                <path d="m16 13-1-9"/>
+                <path d="m6 13-1-9"/>
+                <path d="M2 13h20"/>
+                <path d="M2 13v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
+            </svg>
+        );
+
+        // === ДАННЫЕ МЕНЮ ===
+        const MENU_DATA = [
+            {
+                id: 'fries', title: 'Фри меню', icon: 'Utensils', items: [
+                    { id: 1, name: 'Картофель фри', price: 130, weight: '150г', desc: 'Золотистые хрустящие брусочки', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/2d9e9e97-cdc0-4af1-bbe7-4ff7e3d082f5.jpeg' },
+                    { id: 2, name: 'Картофельные дольки', price: 190, weight: '200г', desc: 'Крупные дольки со специями', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/5bf70aa4-a67c-488f-8430-bf401f1d5592.jpeg' },
+                    { id: 3, name: 'Сырные палочки', price: 260, weight: '6 шт', desc: 'Моцарелла с брусничным соусом', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/89c7d3e3-4957-463e-a2cc-87fa38c5647d.jpeg' },
+                    { id: 4, name: 'Наггетсы', price: 240, weight: '9 шт', desc: 'Нежное куриное филе в панировке', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/46f9f088-11f8-420d-a62c-dff5158ffc4c.jpeg' },
+                    { id: 5, name: 'Куриные стрипсы', price: 260, weight: '5 шт', desc: 'Длинные полоски филе', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/b8d057f3-5186-4a59-a8aa-4e2c162c8e1b.jpeg' },
+                    { id: 6, name: 'Креветки торпедо', price: 380, weight: '5 шт', desc: 'Крупные креветки в панировке', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/c899f83a-ea00-4384-b3de-5c02c3b6e102.jpeg' },
+                    { id: 7, name: 'Куриные крылья', price: 350, weight: '250г', desc: 'Сочные с хрустящей корочкой', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/a561994a-8101-46c6-851a-0e779acc28da.jpeg' },
+                    { id: 8, name: 'Картофельные шарики', price: 200, weight: '200г', desc: 'Пюре в хрустящей панировке', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/cbe3c635-805c-4e7a-b331-be64ea645596.jpeg' },
+                    { id: 9, name: 'Рыбные наггетсы', price: 250, weight: '7 шт', desc: 'Филе минтая в панировке', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/515e652a-8c6c-41c6-9501-b67869d88566.jpeg' },
+                ]
+            },
+            {
+                id: 'shawarma', title: 'Шаурма', icon: 'Sandwich', items: [
+                    { id: 10, name: 'Шаурма куриная', price: 240, weight: '', desc: 'Лаваш, филе, овощи, соусы', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/3fcfdf33-ce2a-42c4-b8d7-b16decc35bc7.jpg' },
+                    { id: 11, name: 'Шаурма с картохой', price: 270, weight: '', desc: 'С картофелем по-деревенски', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/295e7caa-b591-4f2f-a43b-f1bc5e69f1ad.jpeg' },
+                    { id: 12, name: 'Шаурма два сыра', price: 290, weight: '', desc: 'Двойная порция сыра', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/42d41d99-eb2f-42b0-b6bf-114fd9836944.jpeg' },
+                    { id: 13, name: 'Шаурма с креветками', price: 340, weight: '', desc: 'С креветками торпедо', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/a1b3b793-31ff-41be-89b1-2e1dee25c292.jpeg' },
+                    { id: 14, name: 'Шаурма Фиш', price: 290, weight: '', desc: 'Рыбное филе в панировке', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/aac88bfa-eeaf-4ddf-aa6a-dc7815ee3fc3.jpeg' },
+                    { id: 15, name: 'Постная шаурма', price: 220, weight: '', desc: 'Без мяса, постный майонез', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/3d042824-b8cf-4ed7-8c56-511b2929a6ef.jpeg' },
+                    { id: 16, name: 'Шаурма Макси', price: 330, weight: '', desc: 'Двойная порция курицы', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/48b191b8-d81b-474d-a1f2-c95df816de9a.jpeg' },
+                ]
+            },
+            {
+                id: 'drinks', title: 'Напитки', icon: 'Coffee', items: [
+                    { id: 20, name: 'Лимонад Лимончелло', price: 150, weight: '0.5л', desc: 'Аромат Италии', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/516d1de6-8346-4ebe-9771-e11e3d846637.png' },
+                    { id: 21, name: 'Лимонад Блю Агава', price: 150, weight: '0.5л', desc: 'Нежно-голубой цвет', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/fc4b1466-e23e-40b5-8a90-cef4efdf8794.png' },
+                    { id: 22, name: 'Лимонад Розе Гуава', price: 150, weight: '0.5л', desc: 'Тонкий аромат гуавы', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/46b9a1d6-2d6e-49d9-b304-c1dad6388e74.png' },
+                    { id: 23, name: 'Лимонад Черное яблоко', price: 150, weight: '0.5л', desc: 'Лайм и шелковица', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/bb12bd7d-217d-4bbb-90fe-23ca5355ea7f.png' },
+                    { id: 24, name: 'Лимонад Грин Айва', price: 150, weight: '0.5л', desc: 'Мягкий бархатистый вкус', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/e13e4418-ca5a-4c3a-87c6-b34a46335c41.png' },
+                    { id: 25, name: 'Лимонад классический', price: 150, weight: '0.5л', desc: 'Французский рецепт', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/9fd571fd-3dbb-4559-a2d8-f06bc12d69c8.png' },
+                    { id: 26, name: 'Лимонад Дюшес', price: 150, weight: '0.5л', desc: 'Жемчужина коллекции', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/82358281-cd6f-4650-b889-b0e0e5dc34ca.png' },
+                    { id: 27, name: 'Лимонад Тархун', price: 150, weight: '0.5л', desc: 'С эстрагоном', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/fba2807c-9cd5-4bf3-9888-676b2f10cf26.png' },
+                    { id: 28, name: 'Энергетик Ашкуди', price: 180, weight: '0.5л', desc: '18+', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/92bcebe5-047b-4f9b-b379-3681d01941bb.jpeg' },
+                    { id: 29, name: 'Вода Sweet life', price: 50, weight: '0.5л', desc: 'С газом / без газа', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/74dc8fbc-93bb-4ae6-a065-6a264cf7ba5a.jpeg' },
+                ]
+            },
+            {
+                id: 'desserts', title: 'Десерты', icon: 'IceCream', items: [
+                    { id: 48, name: 'Донат с вишней', price: 80, weight: '1 шт', desc: 'Глазированный', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/988eafff-2b37-4ac8-bdf3-005783450f56.jpg' },
+                    { id: 49, name: 'Донат Брауни', price: 80, weight: '1 шт', desc: 'Шоколадный', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/7e17bf1a-7df1-4c6b-acea-6d4f5bbbb7df.jpg' },
+                    { id: 50, name: 'Донат Красный бархат', price: 80, weight: '1 шт', desc: 'Яркий десерт', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/176f0e71-afa7-4a98-9f8d-8ddbb72c0cc3.jpg' },
+                    { id: 51, name: 'Донат Клубника', price: 80, weight: '1 шт', desc: 'С клубничной начинкой', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/6fe734b1-0d9e-4327-acde-b940b7395c07.jpg' },
+                    { id: 52, name: 'Донат Карамель', price: 80, weight: '1 шт', desc: 'С карамельной глазурью', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/ac7833f9-0b45-4b88-b7a4-81542c6af398.jpg' },
+                    { id: 53, name: 'Орешки со сгущенкой', price: 150, weight: '4 шт', desc: 'Уютное чаепитие', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/8da419f1-7196-4597-8736-e7cf77685061.png' },
+                    { id: 54, name: 'Чизкейк Нью Йорк', price: 200, weight: '1 шт', desc: 'Классический', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/ca8098f1-7c95-4b8a-92cd-b68cdbc293fc.jpg' },
+                    { id: 55, name: 'Морковный торт', price: 200, weight: '1 шт', desc: 'Нежный десерт', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/8ea3ec3f-5566-45ab-9d65-4c70e649bf1d.jpg' },
+                ]
+            },
+            {
+                id: 'boxes', title: 'Едамикс Бокс', icon: 'Box', items: [
+                    { id: 63, name: 'Сытный микс', price: 990, weight: '800г', desc: 'Стрипсы, крылья, наггетсы, фри', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/f5d402b2-8664-48ef-822e-868244293350.jpeg' },
+                    { id: 64, name: 'Улетный микс', price: 1200, weight: '950г', desc: 'Только крылья!', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/70abeba8-d091-4f4e-b5ca-95068c1319cf.jpeg' },
+                    { id: 65, name: 'Клёвый микс', price: 1090, weight: '600г', desc: 'Креветки, рыбные наггетсы', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/94a86261-13b3-4c98-b5f1-782196e2b102.jpeg' },
+                    { id: 66, name: 'Большой микс', price: 1450, weight: '1100г', desc: 'Для компании 4-5 чел', img: 'https://media-cdn.restik.com/pl_edamiks_ih89jgr9d/76388be0-a341-4aca-907c-e07ef55171d7.jpeg' },
+                ]
+            }
+        ];
+
+        // === КОМПОНЕНТ ИКОНКИ ===
+        const Icon = ({ name, size = 24 }) => {
+            const iconMap = {
+                'ShoppingBag': ShoppingBagIcon,
+                'Search': SearchIcon,
+                'Plus': PlusIcon,
+                'Minus': MinusIcon,
+                'X': XIcon,
+                'ChefHat': ChefHatIcon,
+                'Truck': TruckIcon,
+                'Dashboard': DashboardIcon,
+                'Check': CheckIcon,
+                'MapPin': MapPinIcon,
+                'Phone': PhoneIcon,
+                'ChevronRight': ChevronRightIcon,
+                'Utensils': UtensilsIcon,
+                'Coffee': CoffeeIcon,
+                'IceCream': IceCreamIcon,
+                'Box': BoxIcon,
+                'Flame': FlameIcon,
+                'Sandwich': SandwichIcon
+            };
+            const IconComponent = iconMap[name];
+            return IconComponent ? <IconComponent /> : null;
+        };
+
+        // === КЛИЕНТСКОЕ ПРИЛОЖЕНИЕ ===
+        const ClientApp = ({ addToCart, cart, setIsCartOpen }) => {
+            const [activeCategory, setActiveCategory] = useState('fries');
+            const [searchQuery, setSearchQuery] = useState('');
+
+            const filteredMenu = MENU_DATA.map(cat => ({
+                ...cat,
+                items: cat.items.filter(item => 
+                    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+            })).filter(cat => cat.items.length > 0);
+
+            const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
+
+            return (
+                <div className="min-h-screen bg-gray-50 pb-20">
+                    {/* Header */}
+                    <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+                        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">E</div>
+                                <div>
+                                    <h1 className="font-bold text-lg leading-tight text-slate-900">Едамикс</h1>
+                                    <p className="text-xs text-slate-500">Быстрая доставка</p>
+                                </div>
+                            </div>
+                            
+                            <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <Icon name="Search" size={20} />
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="Поиск блюд..." 
+                                    className="w-full bg-slate-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            <button 
+                                onClick={() => setIsCartOpen(true)}
+                                className="relative p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                            >
+                                <Icon name="ShoppingBag" size={24} />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                        
+                        {/* Mobile Search */}
+                        <div className="md:hidden px-4 pb-3">
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <Icon name="Search" size={20} />
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="Поиск..." 
+                                    className="w-full bg-slate-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="max-w-7xl mx-auto flex gap-6 px-4 py-6">
+                        {/* Sidebar Categories */}
+                        <aside className="hidden md:block w-64 shrink-0 sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto custom-scroll">
+                            <nav className="space-y-1">
+                                {MENU_DATA.map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setActiveCategory(cat.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                                            activeCategory === cat.id 
+                                            ? 'bg-blue-50 text-blue-700 shadow-sm' 
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                    >
+                                        <Icon name={cat.icon} size={20} />
+                                        {cat.title}
+                                    </button>
+                                ))}
+                            </nav>
+                        </aside>
+
+                        {/* Main Content */}
+                        <main className="flex-1">
+                            {filteredMenu.map(cat => (
+                                <div key={cat.id} className="mb-12">
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                        <Icon name={cat.icon} size={24} /> {cat.title}
+                                    </h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {cat.items.map(item => (
+                                            <div key={item.id} className="card-hover bg-white rounded-xl overflow-hidden border border-slate-100 cursor-pointer">
+                                                <div className="aspect-[4/3] overflow-hidden bg-slate-100 relative">
+                                                    <img 
+                                                        src={item.img} 
+                                                        alt={item.name} 
+                                                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Нет+фото'; }}
+                                                    />
+                                                    {item.weight && (
+                                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-slate-700 shadow-sm">
+                                                            {item.weight}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="p-4">
+                                                    <h3 className="font-bold text-slate-900 mb-1">{item.name}</h3>
+                                                    <p className="text-slate-500 text-sm mb-4 line-clamp-2 h-10">{item.desc}</p>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-bold text-lg text-slate-900">{item.price} ₽</span>
+                                                        <button 
+                                                            onClick={() => addToCart(item)}
+                                                            className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                                                        >
+                                                            <Icon name="Plus" size={20} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        // === КОРЗИНА ===
+        const CartDrawer = ({ isOpen, onClose, cart, setCart }) => {
+            const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+
+            const updateQty = (id, delta) => {
+                setCart(prev => prev.map(item => {
+                    if (item.id === id) {
+                        const newQty = item.qty + delta;
+                        return newQty > 0 ? { ...item, qty: newQty } : null;
+                    }
+                    return item;
+                }).filter(Boolean));
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex justify-end">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col slide-in">
+                        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <h2 className="font-bold text-xl">Корзина</h2>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full">
+                                <Icon name="X" size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {cart.length === 0 ? (
+                                <div className="text-center text-slate-400 mt-20">
+                                    <div className="w-12 h-12 mx-auto mb-4 opacity-50">
+                                        <Icon name="ShoppingBag" size={48} />
+                                    </div>
+                                    <p>Корзина пуста</p>
+                                </div>
+                            ) : (
+                                cart.map(item => (
+                                    <div key={item.id} className="flex gap-4">
+                                        <img src={item.img} className="w-20 h-20 rounded-lg object-cover bg-slate-100" />
+                                        <div className="flex-1">
+                                            <h4 className="font-medium text-slate-900">{item.name}</h4>
+                                            <p className="text-sm text-slate-500 mb-2">{item.price} ₽</p>
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200">
+                                                    <Icon name="Minus" size={16} />
+                                                </button>
+                                                <span className="font-medium w-4 text-center">{item.qty}</span>
+                                                <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200">
+                                                    <Icon name="Plus" size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="font-bold text-slate-900">
+                                            {item.price * item.qty} ₽
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                            <div className="flex justify-between mb-4 text-slate-600">
+                                <span>Итого</span>
+                                <span className="font-bold text-slate-900 text-lg">{cartTotal} ₽</span>
+                            </div>
+                            <button className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
+                                Оформить заказ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // === АДМИН ПАНЕЛЬ ===
+        const AdminPanel = () => {
+            return (
+                <div className="min-h-screen bg-slate-50 flex">
+                    <aside className="w-64 bg-white border-r border-slate-200 hidden lg:block">
+                        <div className="p-6 border-b border-slate-100">
+                            <h1 className="font-bold text-xl text-blue-600">Restik Admin</h1>
+                        </div>
+                        <nav className="p-4 space-y-1">
+                            {['Обзор', 'Заказы', 'Меню', 'Склад', 'Сотрудники', 'Аналитика', 'Настройки'].map((item, i) => (
+                                <div key={i} className={`px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer ${i === 0 ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                    {item}
+                                </div>
+                            ))}
+                        </nav>
+                    </aside>
+
+                    <main className="flex-1 p-8 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">Обзор ресторана</h2>
+                                <p className="text-slate-500">Едамикс • Сегодня</p>
+                            </div>
+                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">+ Новый заказ</button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            {[
+                                { label: 'Выручка', value: '45 200 ₽', change: '+12%', color: 'text-green-600' },
+                                { label: 'Заказы', value: '34', change: '+5%', color: 'text-blue-600' },
+                                { label: 'Средний чек', value: '1 329 ₽', change: '-2%', color: 'text-red-500' },
+                                { label: 'Время готовки', value: '18 мин', change: '0%', color: 'text-slate-600' },
+                            ].map((stat, i) => (
+                                <div key={i} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <p className="text-slate-500 text-sm mb-1">{stat.label}</p>
+                                    <div className="flex items-end justify-between">
+                                        <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
+                                        <span className={`text-xs font-medium ${stat.color} bg-slate-50 px-2 py-1 rounded-full`}>{stat.change}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-slate-100">
+                                <h3 className="font-bold text-lg">Последние заказы</h3>
+                            </div>
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-slate-500">
+                                    <tr>
+                                        <th className="px-6 py-3 font-medium">ID</th>
+                                        <th className="px-6 py-3 font-medium">Клиент</th>
+                                        <th className="px-6 py-3 font-medium">Сумма</th>
+                                        <th className="px-6 py-3 font-medium">Статус</th>
+                                        <th className="px-6 py-3 font-medium">Время</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {[
+                                        { id: '#4821', client: 'Алексей М.', sum: '1 450 ₽', status: 'Готовится', statusColor: 'bg-blue-100 text-blue-700', time: '14:30' },
+                                        { id: '#4820', client: 'Мария К.', sum: '890 ₽', status: 'Доставлен', statusColor: 'bg-green-100 text-green-700', time: '14:15' },
+                                        { id: '#4819', client: 'Иван П.', sum: '2 100 ₽', status: 'Новый', statusColor: 'bg-yellow-100 text-yellow-700', time: '14:05' },
+                                    ].map((order, i) => (
+                                        <tr key={i} className="hover:bg-slate-50">
+                                            <td className="px-6 py-4 font-medium text-blue-600">{order.id}</td>
+                                            <td className="px-6 py-4 text-slate-700">{order.client}</td>
+                                            <td className="px-6 py-4 font-medium">{order.sum}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${order.statusColor}`}>{order.status}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500">{order.time}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // === КУХНЯ (KDS) ===
+        const KitchenDisplay = () => {
+            const [orders, setOrders] = useState([
+                { id: 101, items: ['Шаурма куриная', 'Фри', 'Кола'], time: '14:32', status: 'new' },
+                { id: 102, items: ['Буррито', 'Кесадилья'], time: '14:35', status: 'cooking' },
+                { id: 103, items: ['Латте', 'Капучино', 'Донат'], time: '14:36', status: 'new' },
+                { id: 104, items: ['Наггетсы', 'Соус сырный'], time: '14:38', status: 'ready' },
+            ]);
+
+            const moveOrder = (id, newStatus) => {
+                setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+            };
+
+            const getStatusStyle = (status) => {
+                if (status === 'new') return 'border-l-4 border-l-yellow-500 bg-yellow-50/50';
+                if (status === 'cooking') return 'border-l-4 border-l-blue-500 bg-blue-50/50';
+                return 'border-l-4 border-l-green-500 bg-green-50/50';
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-white p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold flex items-center gap-3">
+                            <Icon name="ChefHat" size={32} /> KDS <span className="text-slate-500 text-lg font-normal">| Едамикс Кухня</span>
+                        </h1>
+                        <div className="text-4xl font-mono font-bold text-red-500">14:42:15</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {['new', 'cooking', 'ready'].map(status => {
+                            const titles = { new: 'Новые', cooking: 'Готовится', ready: 'Готово' };
+                            const colors = { new: 'text-yellow-500', cooking: 'text-blue-500', ready: 'text-green-500' };
+                            return (
+                                <div key={status} className="bg-slate-800 rounded-xl p-4">
+                                    <h2 className={`text-xl font-bold mb-4 ${colors[status]} flex justify-between`}>
+                                        {titles[status]} <span className="bg-slate-700 text-white px-2 rounded text-sm">{orders.filter(o => o.status === status).length}</span>
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {orders.filter(o => o.status === status).map(order => (
+                                            <div key={order.id} className={`p-4 rounded-lg shadow-lg ${getStatusStyle(order.status)}`}>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="font-mono text-xl font-bold">#{order.id}</span>
+                                                    <span className="text-slate-400 text-sm">{order.time}</span>
+                                                </div>
+                                                <ul className="space-y-1 mb-4 text-lg">
+                                                    {order.items.map((item, i) => <li key={i}>• {item}</li>)}
+                                                </ul>
+                                                {status === 'new' && (
+                                                    <button onClick={() => moveOrder(order.id, 'cooking')} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold">
+                                                        Принять в работу
+                                                    </button>
+                                                )}
+                                                {status === 'cooking' && (
+                                                    <button onClick={() => moveOrder(order.id, 'ready')} className="w-full bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold">
+                                                        Готово!
+                                                    </button>
+                                                )}
+                                                {status === 'ready' && (
+                                                    <div className="flex items-center gap-2 text-green-400 font-bold">
+                                                        <Icon name="Check" size={20} /> Ожидает курьера
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // === КУРЬЕР ===
+        const CourierApp = () => {
+            const [activeOrder, setActiveOrder] = useState(null);
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden relative">
+                    <div className="h-1/3 bg-slate-300 relative">
+                         <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-white/90 p-4 rounded-xl shadow-lg text-center">
+                                <div className="w-8 h-8 text-red-500 mx-auto mb-2">
+                                    <Icon name="MapPin" size={32} />
+                                </div>
+                                <p className="font-bold text-slate-800">ул. Ленина, 45</p>
+                                <p className="text-xs text-slate-500">2.4 км от ресторана</p>
+                            </div>
+                         </div>
+                    </div>
+
+                    <div className="flex-1 bg-white rounded-t-3xl -mt-6 relative z-10 p-6 overflow-y-auto">
+                        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+                        
+                        {!activeOrder ? (
+                            <>
+                                <h2 className="text-2xl font-bold mb-4">Активные заказы</h2>
+                                <div className="space-y-4">
+                                    {[
+                                        { id: '#104', address: 'ул. Пушкина, 10', price: '1 200 ₽', items: 'Большой микс' },
+                                        { id: '#105', address: 'пр. Мира, 88', price: '560 ₽', items: 'Шаурма, Кола' }
+                                    ].map(order => (
+                                        <div key={order.id} onClick={() => setActiveOrder(order)} className="border border-slate-200 rounded-xl p-4 active:scale-95 transition-transform cursor-pointer shadow-sm">
+                                            <div className="flex justify-between mb-2">
+                                                <span className="font-bold text-lg">{order.id}</span>
+                                                <span className="font-bold text-green-600">{order.price}</span>
+                                            </div>
+                                            <p className="text-slate-600 text-sm mb-1">{order.address}</p>
+                                            <p className="text-slate-400 text-xs">{order.items}</p>
+                                            <button className="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg font-medium text-sm">Принять заказ</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="fade-in">
+                                <button onClick={() => setActiveOrder(null)} className="mb-4 text-slate-500 flex items-center gap-1">
+                                    <Icon name="ChevronRight" size={16} /> Назад
+                                </button>
+                                <h2 className="text-2xl font-bold mb-6">Заказ {activeOrder.id}</h2>
+                                
+                                <div className="bg-slate-50 p-4 rounded-xl mb-6">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                                            <Icon name="MapPin" size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">ул. Пушкина, 10, кв 45</p>
+                                            <p className="text-xs text-slate-500">Подъезд 2, этаж 4</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                                            <Icon name="Phone" size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">+7 999 000-00-00</p>
+                                            <p className="text-xs text-slate-500">Клиент: Иван</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <button className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50">
+                                        Позвонить клиенту
+                                    </button>
+                                    <button className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-600/30 hover:bg-green-700">
+                                        Доставлен (Фото)
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white border-t border-slate-100 p-4 flex justify-around text-slate-400">
+                        <div className="flex flex-col items-center text-blue-600">
+                            <Icon name="Box" size={24} />
+                            <span className="text-xs mt-1 font-medium">Заказы</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="w-6 h-6 bg-slate-200 rounded-full"></div>
+                            <span className="text-xs mt-1">Чат</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="w-6 h-6 bg-slate-200 rounded-full"></div>
+                            <span className="text-xs mt-1">Профиль</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // === ГЛАВНОЕ ПРИЛОЖЕНИЕ ===
+        const App = () => {
+            const [currentRole, setCurrentRole] = useState('client');
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+
+            const addToCart = (item) => {
+                setCart(prev => {
+                    const existing = prev.find(i => i.id === item.id);
+                    if (existing) {
+                        return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+                    }
+                    return [...prev, { ...item, qty: 1 }];
+                });
+            };
+
+            return (
+                <div>
+                    {/* Переключатель ролей */}
+                    <div className="fixed bottom-4 right-4 z-[100] bg-white p-2 rounded-2xl shadow-2xl border border-slate-200 flex gap-2">
+                        <button onClick={() => setCurrentRole('client')} className={`p-3 rounded-xl transition-all ${currentRole === 'client' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`} title="Клиент">
+                            <Icon name="ShoppingBag" size={20} />
+                        </button>
+                        <button onClick={() => setCurrentRole('admin')} className={`p-3 rounded-xl transition-all ${currentRole === 'admin' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`} title="Админ">
+                            <Icon name="Dashboard" size={20} />
+                        </button>
+                        <button onClick={() => setCurrentRole('kitchen')} className={`p-3 rounded-xl transition-all ${currentRole === 'kitchen' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`} title="Кухня">
+                            <Icon name="ChefHat" size={20} />
+                        </button>
+                        <button onClick={() => setCurrentRole('courier')} className={`p-3 rounded-xl transition-all ${currentRole === 'courier' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`} title="Курьер">
+                            <Icon name="Truck" size={20} />
+                        </button>
+                    </div>
+
+                    {currentRole === 'client' && (
+                        <>
+                            <ClientApp addToCart={addToCart} cart={cart} setIsCartOpen={setIsCartOpen} />
+                            <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cart={cart} setCart={setCart} />
+                        </>
+                    )}
+                    {currentRole === 'admin' && <AdminPanel />}
+                    {currentRole === 'kitchen' && <KitchenDisplay />}
+                    {currentRole === 'courier' && <CourierApp />}
+                </div>
+            );
+        };
+
+        // === РЕНДЕР ===
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
